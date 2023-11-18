@@ -1,0 +1,24 @@
+[package]
+name = "plife"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+bevy = "0.9.1"
+lerp = "0.4.0"
+enum-map = "2.4.1"
+leafwing-input-manager = "0.7.2"
+rand = "0.8.5"
+bevy_egui = "0.19"
+bevy-inspector-egui = "0.16.6"
+bevy_spatial = { version = "0.4.0", features = ["kdtree"] }
+
+# Enable a small amount of optimization in debug mode
+[profile.dev]
+opt-level = 1
+
+# Enable high optimizations for dependencies (incl. Bevy), but not for our code:
+[profile.dev.package."*"]
+opt-level = 3
