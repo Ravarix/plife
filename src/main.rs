@@ -160,6 +160,31 @@ impl ParticleMeta {
 }
 
 #[derive(Reflect, FromReflect)]
+struct ActivationProps {
+    start: f32,
+    slope: f32,
+    end: f32,
+}
+
+impl ActivationProps {
+    fn scale(&self, mul: f32) -> Self {
+        Self {
+            start: self.start * mul,
+            slope: self.slope * mul,
+            end: self.end * mul,
+        }
+    }
+
+    fn random(rng: &mut ThreadRng) -> Self {
+        Self {
+            start: rng.gen_range(0.0..2.0),
+            slope: rng.gen_range(-10.0 .. 10.0),
+            end: rng.gen_range(MAX_INTERACTION_DIST/2.0 .. MAX_INTERACTION_DIST),
+        }
+    }
+}
+
+#[derive(Reflect, FromReflect)]
 struct CurveProps {
     x_mul: f32,
     y_mul: f32,
@@ -179,7 +204,7 @@ impl CurveProps {
         Self {
             x_mul: rng.gen_range(-2.0..2.0),
             y_mul: rng.gen_range(-10.0..10.0),
-            x_offset: rng.gen_range(0.0..1.),
+            x_offset: rng.gen_range(0.0..TWO_PI),
         }
     }
 }
@@ -188,7 +213,7 @@ impl CurveProps {
 enum Curve {
     Sin(CurveProps),
     Cos(CurveProps),
-    Activation(CurveProps)
+    Activation(ActivationProps)
 }
 
 impl Curve {
@@ -202,7 +227,7 @@ impl Curve {
 
     fn random(rng: &mut ThreadRng) -> Curve {
         if FAST_MODE {
-            Curve::Activation(CurveProps::random(rng))
+            Curve::Activation(ActivationProps::random(rng))
         } else {
             match rng.gen_bool(0.5) {
                 true => Curve::Cos(CurveProps::random(rng)),
@@ -215,8 +240,8 @@ impl Curve {
         match self {
             Curve::Sin(props) => ((0.0.lerp_bounded(TWO_PI, factor) + props.x_offset) * props.x_mul).sin() * props.y_mul,
             Curve::Cos(props) => ((0.0.lerp_bounded(TWO_PI, factor) + props.x_offset) * props.x_mul).cos() * props.y_mul,
-            Curve::Activation(props) => match factor > props.x_offset {
-                true => (1. - (factor - props.x_offset)) * props.x_mul * props.y_mul,
+            Curve::Activation(props) => match factor > props.start {
+                true => (factor - props.start) * props.slope,
                 false => 0.
             }
         }
